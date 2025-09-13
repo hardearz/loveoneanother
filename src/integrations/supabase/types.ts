@@ -14,7 +14,229 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      luv_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          from_user_id: string
+          id: string
+          task_id: string | null
+          to_user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          from_user_id: string
+          id?: string
+          task_id?: string | null
+          to_user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          from_user_id?: string
+          id?: string
+          task_id?: string | null
+          to_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "luv_transactions_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "luv_transactions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "luv_transactions_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          luv_balance: number
+          phone_number: string | null
+          profile_photo: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          luv_balance?: number
+          phone_number?: string | null
+          profile_photo?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          luv_balance?: number
+          phone_number?: string | null
+          profile_photo?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      redemption_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          partner_name: string
+          price_in_luvs: number
+          redemption_code: string | null
+          updated_at: string
+          validity_end: string
+          validity_start: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          name: string
+          partner_name: string
+          price_in_luvs: number
+          redemption_code?: string | null
+          updated_at?: string
+          validity_end: string
+          validity_start: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          partner_name?: string
+          price_in_luvs?: number
+          redemption_code?: string | null
+          updated_at?: string
+          validity_end?: string
+          validity_start?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          admin_rejection_media: string[] | null
+          admin_rejection_message: string | null
+          category_id: string
+          claimed_by: string | null
+          created_at: string
+          deadline: string
+          description: string
+          id: string
+          location_address: string
+          photos: string[] | null
+          proof_media: string[] | null
+          proof_text: string | null
+          reward_luvs: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          admin_rejection_media?: string[] | null
+          admin_rejection_message?: string | null
+          category_id: string
+          claimed_by?: string | null
+          created_at?: string
+          deadline: string
+          description: string
+          id?: string
+          location_address: string
+          photos?: string[] | null
+          proof_media?: string[] | null
+          proof_text?: string | null
+          reward_luvs: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          admin_rejection_media?: string[] | null
+          admin_rejection_message?: string | null
+          category_id?: string
+          claimed_by?: string | null
+          created_at?: string
+          deadline?: string
+          description?: string
+          id?: string
+          location_address?: string
+          photos?: string[] | null
+          proof_media?: string[] | null
+          proof_text?: string | null
+          reward_luvs?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +245,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +372,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

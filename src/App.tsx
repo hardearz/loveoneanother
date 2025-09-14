@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import Dashboard from "./pages/Dashboard";
+import Tasks from "./pages/Tasks";
+import TaskDetails from "./pages/TaskDetails";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -22,7 +25,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   
-  return user ? <>{children}</> : <Navigate to="/auth" replace />;
+  return user ? (
+    <div className="relative">
+      {children}
+      <BottomNavigation />
+    </div>
+  ) : <Navigate to="/auth" replace />;
 };
 
 // Public Route Component (redirect to dashboard if authenticated)
@@ -49,6 +57,8 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+            <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetails /></ProtectedRoute>} />
             <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

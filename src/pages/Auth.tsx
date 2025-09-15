@@ -60,6 +60,42 @@ export default function Auth() {
     }
   };
 
+  const handleAdminSetup = async () => {
+    setIsLoading(true);
+    
+    try {
+      const result = await signUp('admin@loa.com.bb', 'admin', 'Admin', 'User');
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Admin account created",
+          description: "You can now sign in with admin@loa.com.bb / admin",
+        });
+        // Switch to sign in mode and pre-fill admin credentials
+        setIsSignUp(false);
+        setFormData({
+          email: 'admin@loa.com.bb',
+          password: 'admin',
+          firstName: '',
+          lastName: ''
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to create admin user",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -152,6 +188,21 @@ export default function Auth() {
               )}
             </Button>
           </form>
+
+          <div className="mt-4 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleAdminSetup}
+              disabled={isLoading}
+            >
+              Quick Admin Setup
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Creates admin@loa.com.bb with password: admin
+            </p>
+          </div>
 
           <div className="mt-6 text-center">
             <Button

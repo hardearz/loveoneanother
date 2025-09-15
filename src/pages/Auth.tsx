@@ -64,7 +64,7 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
-      const result = await signUp('admin@loa.com.bb', 'admin123', 'Admin', 'User');
+      const result = await signUp('admin@loa.com', 'admin123', 'Admin', 'User');
       if (result.error) {
         toast({
           title: "Error",
@@ -74,12 +74,12 @@ export default function Auth() {
       } else {
         toast({
           title: "Admin account created",
-          description: "You can now sign in with admin@loa.com.bb / admin123",
+          description: "You can now sign in with admin@loa.com / admin123",
         });
         // Switch to sign in mode and pre-fill admin credentials
         setIsSignUp(false);
         setFormData({
-          email: 'admin@loa.com.bb',
+          email: 'admin@loa.com',
           password: 'admin123',
           firstName: '',
           lastName: ''
@@ -200,7 +200,7 @@ export default function Auth() {
               Quick Admin Setup
             </Button>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              Creates admin@loa.com.bb with password: admin123
+              Creates admin@loa.com with password: admin123
             </p>
           </div>
 

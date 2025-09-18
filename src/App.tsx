@@ -9,6 +9,10 @@ import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Tasks from "./pages/Tasks";
 import TaskDetails from "./pages/TaskDetails";
+import TaskSubmit from "./pages/TaskSubmit";
+import TaskManagement from "./pages/admin/TaskManagement";
+import CreateTask from "./pages/admin/CreateTask";
+import TaskApproval from "./pages/admin/TaskApproval";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -78,6 +82,10 @@ const App = () => {
               <Route path="/" element={<ProtectedRoute><DashboardRoute /></ProtectedRoute>} />
               <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
               <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetails /></ProtectedRoute>} />
+              <Route path="/tasks/:id/submit" element={<ProtectedRoute><TaskSubmit /></ProtectedRoute>} />
+              <Route path="/admin/tasks" element={<ProtectedRoute><TaskManagement /></ProtectedRoute>} />
+              <Route path="/admin/tasks/new" element={<ProtectedRoute><CreateTask /></ProtectedRoute>} />
+              <Route path="/admin/tasks/:id/approve" element={<ProtectedRoute><TaskApproval /></ProtectedRoute>} />
               <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

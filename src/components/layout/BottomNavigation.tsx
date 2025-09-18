@@ -1,15 +1,28 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Search, User, Award, History } from 'lucide-react';
+import { Home, Search, User, Award, History, Settings } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export const BottomNavigation: React.FC = () => {
-  const navItems = [
+  const { profile } = useAuth();
+  
+  const userNavItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/tasks', icon: Search, label: 'Tasks' },
     { path: '/rewards', icon: Award, label: 'Rewards' },
     { path: '/history', icon: History, label: 'History' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
+
+  const adminNavItems = [
+    { path: '/', icon: Home, label: 'Home' },
+    { path: '/tasks', icon: Search, label: 'Tasks' },
+    { path: '/admin/tasks', icon: Settings, label: 'Manage' },
+    { path: '/history', icon: History, label: 'History' },
+    { path: '/profile', icon: User, label: 'Profile' },
+  ];
+
+  const navItems = profile?.role === 'admin' ? adminNavItems : userNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-2 z-50">

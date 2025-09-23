@@ -16,9 +16,13 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Calendar,
-  MapPin 
+  MapPin,
+  Download,
+  FileText
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { VolunteerResumeDocument } from "@/components/pdf/VolunteerResumeDocument";
 
 interface TaskHistory {
   id: string;
@@ -31,6 +35,9 @@ interface TaskHistory {
   proof_text?: string;
   admin_rejection_message?: string;
   created_at: string;
+  categories?: {
+    name: string;
+  };
 }
 
 interface LuvTransaction {
@@ -61,10 +68,15 @@ const History = () => {
 
   const fetchHistory = async () => {
     try {
-      // Fetch task history
+      // Fetch task history with category information
       const { data: taskData, error: taskError } = await supabase
         .from("tasks")
-        .select("*")
+        .select(`
+          *,
+          categories (
+            name
+          )
+        `)
         .eq("claimed_by", profile?.id)
         .order("created_at", { ascending: false });
 
@@ -97,6 +109,7 @@ const History = () => {
     }
   };
 
+  const completedTasks = tasks.filter(task => task.status === 'Completed');
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Completed":
@@ -165,12 +178,71 @@ const History = () => {
       <AppHeader />
       <div className="container mx-auto px-4 py-6 pb-20">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
-              <HistoryIcon className="h-8 w-8" />
-              Work History
-            </h1>
-            <p className="text-muted-foreground">Track your completed tasks and earned LUVs</p>
+          <div className="flex items-center justify-between">
+            <div className="text-center flex-1">
+              <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
+                <HistoryIcon className="h-8 w-8" />
+                Work History
+              </h1>
+              <p className="text-muted-foreground">Track your completed tasks and earned LUVs</p>
+          </div>
+
+          {/* PDF Export Info */}
+          {completedTasks.length > 0 && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900">Professional Volunteer Resume</p>
+                    <p className="text-blue-700 mt-1">
+                      Export your completed volunteer work as a professional PDF resume. Perfect for job applications, college admissions, or showcasing your community contributions.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+            
+            {/* Export to PDF Button */}
+            {completedTasks.length > 0 && (
+              <div className="flex flex-col items-end gap-2">
+                <PDFDownloadLink
+                  document={
+                    <VolunteerResumeDocument 
+                      profile={profile} 
+                      completedTasks={completedTasks} 
+                    />
+                  }
+                  fileName={`${profile.first_name}_${profile.last_name}_Volunteer_Resume.pdf`}
+                >
+                  {({ loading }) => (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={loading}
+                      className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      {loading ? (
+                        <>
+                          <Clock className="h-4 w-4 animate-spin" />
+                          Generating PDF...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4" />
+                          Export Resume PDF
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <FileText className="h-3 w-3" />
+                  <span>{completedTasks.length} completed task{completedTasks.length !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <Tabs defaultValue="tasks" className="w-full">

@@ -20,6 +20,7 @@ const Profile = () => {
     first_name: profile?.first_name || "",
     last_name: profile?.last_name || "",
     phone_number: profile?.phone_number || "",
+    email: profile?.email || "",
   });
 
   const handleSave = async () => {
@@ -27,12 +28,23 @@ const Profile = () => {
     
     setLoading(true);
     try {
+      // Update email in Supabase Auth if it changed
+      if (formData.email !== profile.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: formData.email,
+        });
+        
+        if (emailError) throw emailError;
+      }
+
+      // Update profile in database
       const { error } = await supabase
         .from("profiles")
         .update({
           first_name: formData.first_name,
           last_name: formData.last_name,
           phone_number: formData.phone_number || null,
+          email: formData.email,
         })
         .eq("id", profile.id);
 
@@ -40,7 +52,9 @@ const Profile = () => {
 
       toast({
         title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        description: formData.email !== profile.email 
+          ? "Your profile has been updated successfully. Please check your new email for confirmation."
+          : "Your profile has been updated successfully.",
       });
 
       await refreshProfile();
@@ -61,6 +75,7 @@ const Profile = () => {
       first_name: profile?.first_name || "",
       last_name: profile?.last_name || "",
       phone_number: profile?.phone_number || "",
+      email: profile?.email || "",
     });
     setEditing(false);
   };
@@ -136,6 +151,17 @@ const Profile = () => {
                         onChange={(e) => handleChange("last_name", e.target.value)}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      placeholder="Enter your email address"
+                    />
                   </div>
 
                   <div className="space-y-2">

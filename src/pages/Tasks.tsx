@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { TaskFilters } from '@/components/tasks/TaskFilters';
 import { Loader2, MapPin } from 'lucide-react';
@@ -86,12 +87,14 @@ export const Tasks: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="p-4">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Available Tasks</h1>
-          <p className="text-muted-foreground">Find and claim tasks to earn LUVs</p>
-        </div>
+    <>
+      <AppHeader />
+      <div className="min-h-screen bg-background pb-20">
+        <div className="p-4">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Available Tasks</h1>
+            <p className="text-muted-foreground">Find and claim tasks to earn LUVs</p>
+          </div>
 
         {/* Search and Filters */}
         <div className="space-y-4 mb-6">
@@ -144,8 +147,9 @@ export const Tasks: React.FC = () => {
             ))
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -236,7 +236,7 @@ export const TaskDetails: React.FC = () => {
             )}
 
             <div className="pt-4">
-              {isAvailable && (
+              {isAvailable && profile?.role !== 'admin' && (
                 <Button
                   onClick={handleClaimTask}
                   disabled={claiming}

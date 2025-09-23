@@ -149,20 +149,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onTaskClaimed }) => {
           >
             View Details
           </Button>
-          <Button 
-            className="flex-1" 
-            onClick={handleClaimTask}
-            disabled={claiming}
-          >
-            {claiming ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Claiming...
-              </>
-            ) : (
-              'Claim Task'
-            )}
-          </Button>
+          {profile?.role !== 'admin' && (
+            <Button 
+              className="flex-1" 
+              onClick={handleClaimTask}
+              disabled={claiming}
+            >
+              {claiming ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Claiming...
+                </>
+              ) : (
+                'Claim Task'
+              )}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Search, User, Award, History, Settings, Gift } from 'lucide-react';
+import { Home, Search, User, Award, History, Settings, Gift, Folder } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export const BottomNavigation: React.FC = () => {
@@ -17,6 +17,7 @@ export const BottomNavigation: React.FC = () => {
   const adminNavItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/admin/tasks', icon: Settings, label: 'Tasks' },
+    { path: '/admin/categories', icon: Folder, label: 'Categories' },
     { path: '/admin/redemption', icon: Gift, label: 'Rewards' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];

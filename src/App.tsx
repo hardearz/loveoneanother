@@ -18,6 +18,7 @@ import CreateTask from "./pages/admin/CreateTask";
 import TaskApproval from "./pages/admin/TaskApproval";
 import RedemptionManagement from "./pages/admin/RedemptionManagement";
 import CreateRedemptionItem from "./pages/admin/CreateRedemptionItem";
+import CategoryManagement from "./pages/admin/CategoryManagement";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -96,6 +97,7 @@ const App = () => {
               <Route path="/admin/tasks/:id/approve" element={<ProtectedRoute><TaskApproval /></ProtectedRoute>} />
               <Route path="/admin/redemption" element={<ProtectedRoute><RedemptionManagement /></ProtectedRoute>} />
               <Route path="/admin/redemption/new" element={<ProtectedRoute><CreateRedemptionItem /></ProtectedRoute>} />
+              <Route path="/admin/categories" element={<ProtectedRoute><CategoryManagement /></ProtectedRoute>} />
               <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

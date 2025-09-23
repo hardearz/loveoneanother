@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -107,27 +108,33 @@ export const TaskDetails: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pb-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <>
+        <AppHeader />
+        <div className="min-h-screen bg-background flex items-center justify-center pb-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </>
     );
   }
 
   if (!task) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <div className="p-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/tasks')}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Tasks
-          </Button>
-          <p className="text-muted-foreground">Task not found</p>
+      <>
+        <AppHeader />
+        <div className="min-h-screen bg-background pb-20">
+          <div className="p-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/tasks')}
+              className="mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Tasks
+            </Button>
+            <p className="text-muted-foreground">Task not found</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -136,7 +143,9 @@ export const TaskDetails: React.FC = () => {
   const isAvailable = task.status === 'Available';
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <>
+      <AppHeader />
+      <div className="min-h-screen bg-background pb-20">
       <div className="p-4">
         <Button
           variant="ghost"
@@ -249,6 +258,7 @@ export const TaskDetails: React.FC = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 

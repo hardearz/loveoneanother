@@ -202,21 +202,23 @@ const Profile = () => {
             </CardContent>
           </Card>
 
-          {/* LUV Balance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                LUV Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <p className="text-4xl font-bold text-primary">{profile.luv_balance}</p>
-                <p className="text-muted-foreground">LUVs available</p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* LUV Balance - Only show for regular users */}
+          {profile.role === 'user' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  LUV Balance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-primary">{profile.luv_balance}</p>
+                  <p className="text-muted-foreground">LUVs available</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Account Information */}
           <Card>

@@ -148,8 +148,8 @@ const TaskApproval = () => {
         .from("tasks")
         .update({ 
           status: "Rejected",
-          admin_rejection_message: rejectionMessage,
-          claimed_by: null // Release the task
+          admin_rejection_message: rejectionMessage
+          // Keep claimed_by so user can see it in their claimed tasks
         })
         .eq("id", task.id);
 
@@ -157,7 +157,7 @@ const TaskApproval = () => {
 
       toast({
         title: "Task rejected",
-        description: "The task has been rejected and released for other users."
+        description: "The task has been rejected and returned to the user for revision."
       });
 
       navigate("/admin/tasks");

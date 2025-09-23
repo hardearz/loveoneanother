@@ -1,21 +1,14 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 
-// Register fonts for better typography
-Font.register({
-  family: 'Open Sans',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/opensans/v34/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVc.woff2' },
-    { src: 'https://fonts.gstatic.com/s/opensans/v34/memQYaGs126MiZpBA-UFUIcVXSCEkx2cmqvXlWq8tWZ0Pw86hd0Rk8ZkWVAewA.woff2', fontWeight: 'bold' }
-  ]
-});
+// Use built-in fonts for better compatibility
 
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#ffffff',
     padding: 40,
-    fontFamily: 'Open Sans',
+    fontFamily: 'Helvetica',
     fontSize: 11,
     lineHeight: 1.4,
   },

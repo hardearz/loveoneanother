@@ -30,7 +30,7 @@ interface RedemptionItem {
 }
 
 const Rewards = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -103,9 +103,9 @@ const Rewards = () => {
       // Show success dialog instead of toast
       setRedemptionSuccess({ show: true, item });
 
-      // Refresh profile to update balance
+      // Refresh profile to update balance without page reload
       await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.reload();
+      await refreshProfile();
 
     } catch (error: any) {
       toast({

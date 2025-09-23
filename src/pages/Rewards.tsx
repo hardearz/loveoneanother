@@ -57,10 +57,20 @@ const Rewards = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch redemption items (without codes for non-redeemed items)
+      // First, fetch basic redemption items info (excluding sensitive redemption codes)
       const { data: itemsData, error: itemsError } = await supabase
         .from("redemption_items")
-        .select("*")
+        .select(`
+          id,
+          name,
+          description,
+          partner_name,
+          price_in_luvs,
+          validity_start,
+          validity_end,
+          created_at,
+          updated_at
+        `)
         .order("created_at", { ascending: false });
 
       if (itemsError) throw itemsError;
@@ -73,7 +83,28 @@ const Rewards = () => {
 
       if (redemptionsError) throw redemptionsError;
 
-      setItems(itemsData || []);
+      // For items the user has redeemed, fetch the full details including redemption codes
+      let itemsWithCodes = itemsData || [];
+      if (redemptionsData && redemptionsData.length > 0) {
+        const redeemedItemIds = redemptionsData.map(r => r.redemption_item_id);
+        
+        if (redeemedItemIds.length > 0) {
+          const { data: redeemedItemsData, error: redeemedItemsError } = await supabase
+            .from("redemption_items")
+            .select("*")
+            .in("id", redeemedItemIds);
+
+          if (redeemedItemsError) throw redeemedItemsError;
+
+          // Merge the data - replace items the user has redeemed with full data including codes
+          itemsWithCodes = itemsData.map(item => {
+            const redeemedItem = redeemedItemsData?.find(ri => ri.id === item.id);
+            return redeemedItem || item;
+          });
+        }
+      }
+
+      setItems(itemsWithCodes);
       setUserRedemptions(redemptionsData || []);
     } catch (error: any) {
       toast({

@@ -274,6 +274,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_redemption_items: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          partner_name: string
+          price_in_luvs: number
+          updated_at: string
+          validity_end: string
+          validity_start: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

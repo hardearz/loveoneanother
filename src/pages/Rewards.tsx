@@ -57,51 +57,39 @@ const Rewards = () => {
 
   const fetchData = async () => {
     try {
-      // First, fetch basic redemption items info (excluding sensitive redemption codes)
+      // Use the secure function to fetch public redemption items (no codes exposed)
       const { data: itemsData, error: itemsError } = await supabase
-        .from("redemption_items")
-        .select(`
-          id,
-          name,
-          description,
-          partner_name,
-          price_in_luvs,
-          validity_start,
-          validity_end,
-          created_at,
-          updated_at
-        `)
-        .order("created_at", { ascending: false });
+        .rpc("get_public_redemption_items");
 
       if (itemsError) throw itemsError;
 
       // Fetch user's redemptions to know which codes they can see
       const { data: redemptionsData, error: redemptionsError } = await supabase
         .from("user_redemptions")
-        .select("*")
+        .select(`
+          *,
+          redemption_items(*)
+        `)
         .order("redeemed_at", { ascending: false });
 
       if (redemptionsError) throw redemptionsError;
 
-      // For items the user has redeemed, fetch the full details including redemption codes
+      // For items the user has redeemed, merge with the full details including codes
       let itemsWithCodes = itemsData || [];
       if (redemptionsData && redemptionsData.length > 0) {
-        const redeemedItemIds = redemptionsData.map(r => r.redemption_item_id);
-        
-        if (redeemedItemIds.length > 0) {
-          const { data: redeemedItemsData, error: redeemedItemsError } = await supabase
-            .from("redemption_items")
-            .select("*")
-            .in("id", redeemedItemIds);
+        // Create a map of redeemed items with their full data (including codes)
+        const redeemedItemsMap = new Map();
+        redemptionsData.forEach(redemption => {
+          if (redemption.redemption_items) {
+            redeemedItemsMap.set(redemption.redemption_item_id, redemption.redemption_items);
+          }
+        });
 
-          if (redeemedItemsError) throw redeemedItemsError;
-
-          // Merge the data - replace items the user has redeemed with full data including codes
-          itemsWithCodes = itemsData.map(item => {
-            const redeemedItem = redeemedItemsData?.find(ri => ri.id === item.id);
-            return redeemedItem || item;
-          });
-        }
+        // Merge the data - replace items the user has redeemed with full data including codes
+        itemsWithCodes = itemsData.map(item => {
+          const redeemedItem = redeemedItemsMap.get(item.id);
+          return redeemedItem || item; // Use redeemed item data if available, otherwise use public data
+        });
       }
 
       setItems(itemsWithCodes);

@@ -140,6 +140,38 @@ const History = () => {
     }
   };
 
+  const handleUnclaimTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          status: 'Available',
+          claimed_by: null,
+          proof_text: null,
+          proof_media: null,
+          admin_rejection_message: null,
+          admin_rejection_media: null
+        })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Task returned to available",
+        description: "The task is now available for other users to claim.",
+      });
+
+      // Refresh the task list
+      fetchHistory();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to return task to available status.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const completedTasks = tasks.filter(task => task.status === 'Completed');
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -311,25 +343,43 @@ const History = () => {
                           <p className="text-red-600 font-medium text-sm">Rejection Reason:</p>
                           <p className="text-red-600 text-sm">{task.admin_rejection_message}</p>
                         </div>
-                      )}
+                       )}
 
-                      {task.status === "Claimed" && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => navigate(`/tasks/${task.id}/submit`)}
-                          >
-                            Submit Proof
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
-                          >
-                            View Details
-                          </Button>
-                        </div>
-                      )}
+                       {task.status === "Rejected" && (
+                         <div className="flex gap-2">
+                           <Button
+                             size="sm"
+                             onClick={() => navigate(`/tasks/${task.id}/submit`)}
+                           >
+                             Resubmit Proof
+                           </Button>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => handleUnclaimTask(task.id)}
+                           >
+                             Return to Available
+                           </Button>
+                         </div>
+                       )}
+
+                       {task.status === "Claimed" && (
+                         <div className="flex gap-2">
+                           <Button
+                             size="sm"
+                             onClick={() => navigate(`/tasks/${task.id}/submit`)}
+                           >
+                             Submit Proof
+                           </Button>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => navigate(`/tasks/${task.id}`)}
+                           >
+                             View Details
+                           </Button>
+                         </div>
+                       )}
 
                       <div className="text-xs text-muted-foreground">
                         Claimed on {new Date(task.created_at).toLocaleDateString()}

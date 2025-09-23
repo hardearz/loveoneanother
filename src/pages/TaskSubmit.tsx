@@ -21,6 +21,7 @@ interface TaskData {
   status: string;
   claimed_by?: string;
   proof_text?: string;
+  admin_rejection_message?: string;
 }
 
 const TaskSubmit = () => {
@@ -91,15 +92,19 @@ const TaskSubmit = () => {
         .from("tasks")
         .update({ 
           proof_text: proofText,
-          status: "Pending Approval"
+          status: "Pending Approval",
+          admin_rejection_message: null, // Clear previous rejection message
+          admin_rejection_media: null    // Clear previous rejection media
         })
         .eq("id", task.id);
 
       if (error) throw error;
 
       toast({
-        title: "Proof submitted successfully",
-        description: "Your work has been submitted for admin review. You'll be notified once it's approved."
+        title: isRejected ? "Proof resubmitted successfully" : "Proof submitted successfully",
+        description: isRejected 
+          ? "Your revised work has been resubmitted for admin review." 
+          : "Your work has been submitted for admin review. You'll be notified once it's approved."
       });
 
       navigate("/tasks");
@@ -142,7 +147,8 @@ const TaskSubmit = () => {
     );
   }
 
-  const isAlreadySubmitted = task.status === "Pending Approval" || task.status === "Completed" || task.status === "Rejected";
+  const isAlreadySubmitted = task.status === "Pending Approval" || task.status === "Completed";
+  const isRejected = task.status === "Rejected";
 
   return (
     <>
@@ -205,6 +211,21 @@ const TaskSubmit = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Show rejection message if task was rejected */}
+              {isRejected && task.admin_rejection_message && (
+                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-600 mb-2">
+                    <span className="font-medium">Task was rejected</span>
+                  </div>
+                  <p className="text-sm text-red-600 mb-2">
+                    <strong>Reason:</strong> {task.admin_rejection_message}
+                  </p>
+                  <p className="text-sm text-red-600">
+                    Please address the issues mentioned above and resubmit your proof.
+                  </p>
+                </div>
+              )}
+
               {isAlreadySubmitted ? (
                 <div className="space-y-4">
                   <div className="bg-muted p-4 rounded-lg">
@@ -235,12 +256,17 @@ const TaskSubmit = () => {
               ) : (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="proof">Describe the work you completed</Label>
+                    <Label htmlFor="proof">
+                      {isRejected ? "Revise and resubmit your work proof" : "Describe the work you completed"}
+                    </Label>
                     <Textarea
                       id="proof"
                       value={proofText}
                       onChange={(e) => setProofText(e.target.value)}
-                      placeholder="Provide detailed description of what you did, how you completed the task, any challenges faced, and any additional relevant information..."
+                      placeholder={isRejected 
+                        ? "Please address the rejection feedback and provide an updated description of your work..."
+                        : "Provide detailed description of what you did, how you completed the task, any challenges faced, and any additional relevant information..."
+                      }
                       rows={8}
                       className="min-h-[200px]"
                     />
@@ -250,7 +276,7 @@ const TaskSubmit = () => {
                     <p className="text-sm text-blue-600">
                       <strong>Tip:</strong> Provide as much detail as possible about your work. 
                       Include what you did, how you did it, and any observations or results. 
-                      This helps administrators quickly approve your submission.
+                      {isRejected && " Make sure to address the feedback provided in the rejection message."}
                     </p>
                   </div>
 
@@ -260,7 +286,7 @@ const TaskSubmit = () => {
                       disabled={submitting || !proofText.trim()}
                       className="flex-1"
                     >
-                      {submitting ? "Submitting..." : "Submit Work Proof"}
+                      {submitting ? (isRejected ? "Resubmitting..." : "Submitting...") : (isRejected ? "Resubmit Work Proof" : "Submit Work Proof")}
                     </Button>
                     <Button
                       variant="outline"

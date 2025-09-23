@@ -10,6 +10,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Tasks from "./pages/Tasks";
 import TaskDetails from "./pages/TaskDetails";
 import TaskSubmit from "./pages/TaskSubmit";
+import Profile from "./pages/Profile";
+import History from "./pages/History";
 import TaskManagement from "./pages/admin/TaskManagement";
 import CreateTask from "./pages/admin/CreateTask";
 import TaskApproval from "./pages/admin/TaskApproval";
@@ -83,6 +85,8 @@ const App = () => {
               <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
               <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetails /></ProtectedRoute>} />
               <Route path="/tasks/:id/submit" element={<ProtectedRoute><TaskSubmit /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
               <Route path="/admin/tasks" element={<ProtectedRoute><TaskManagement /></ProtectedRoute>} />
               <Route path="/admin/tasks/new" element={<ProtectedRoute><CreateTask /></ProtectedRoute>} />
               <Route path="/admin/tasks/:id/approve" element={<ProtectedRoute><TaskApproval /></ProtectedRoute>} />

@@ -16,9 +16,7 @@ export const BottomNavigation: React.FC = () => {
 
   const adminNavItems = [
     { path: '/', icon: Home, label: 'Home' },
-    { path: '/tasks', icon: Search, label: 'Tasks' },
     { path: '/admin/tasks', icon: Settings, label: 'Manage' },
-    { path: '/history', icon: History, label: 'History' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 

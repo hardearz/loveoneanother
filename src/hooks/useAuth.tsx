@@ -13,6 +13,8 @@ interface Profile {
   profile_photo?: string;
   role: 'admin' | 'user';
   luv_balance: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {

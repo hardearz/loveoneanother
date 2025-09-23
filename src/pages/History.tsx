@@ -1,0 +1,311 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  History as HistoryIcon, 
+  Award, 
+  CheckCircle, 
+  Clock, 
+  XCircle, 
+  ArrowUpRight,
+  ArrowDownLeft,
+  Calendar,
+  MapPin 
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+interface TaskHistory {
+  id: string;
+  title: string;
+  description: string;
+  location_address: string;
+  reward_luvs: number;
+  deadline: string;
+  status: string;
+  proof_text?: string;
+  admin_rejection_message?: string;
+  created_at: string;
+}
+
+interface LuvTransaction {
+  id: string;
+  amount: number;
+  description: string;
+  created_at: string;
+  task_id?: string;
+  tasks?: {
+    title: string;
+  };
+}
+
+const History = () => {
+  const { profile } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const [tasks, setTasks] = useState<TaskHistory[]>([]);
+  const [transactions, setTransactions] = useState<LuvTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (profile) {
+      fetchHistory();
+    }
+  }, [profile]);
+
+  const fetchHistory = async () => {
+    try {
+      // Fetch task history
+      const { data: taskData, error: taskError } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("claimed_by", profile?.id)
+        .order("created_at", { ascending: false });
+
+      if (taskError) throw taskError;
+
+      // Fetch LUV transactions
+      const { data: transactionData, error: transactionError } = await supabase
+        .from("luv_transactions")
+        .select(`
+          *,
+          tasks (
+            title
+          )
+        `)
+        .eq("to_user_id", profile?.id)
+        .order("created_at", { ascending: false });
+
+      if (transactionError) throw transactionError;
+
+      setTasks(taskData || []);
+      setTransactions(transactionData || []);
+    } catch (error: any) {
+      toast({
+        title: "Error loading history",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Completed":
+        return (
+          <Badge className="bg-green-500/10 text-green-500">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Completed
+          </Badge>
+        );
+      case "Pending Approval":
+        return (
+          <Badge className="bg-yellow-500/10 text-yellow-500">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending Review
+          </Badge>
+        );
+      case "Rejected":
+        return (
+          <Badge className="bg-red-500/10 text-red-500">
+            <XCircle className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        );
+      case "Claimed":
+        return (
+          <Badge className="bg-blue-500/10 text-blue-500">
+            <Clock className="h-3 w-3 mr-1" />
+            In Progress
+          </Badge>
+        );
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  if (!profile) {
+    return (
+      <>
+        <AppHeader />
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground mt-2">Loading...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (loading) {
+    return (
+      <>
+        <AppHeader />
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground mt-2">Loading your history...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <AppHeader />
+      <div className="container mx-auto px-4 py-6 pb-20">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
+              <HistoryIcon className="h-8 w-8" />
+              Work History
+            </h1>
+            <p className="text-muted-foreground">Track your completed tasks and earned LUVs</p>
+          </div>
+
+          <Tabs defaultValue="tasks" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="tasks">Task History</TabsTrigger>
+              <TabsTrigger value="transactions">LUV Transactions</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="tasks" className="space-y-4">
+              {tasks.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium">No tasks yet</h3>
+                    <p className="text-muted-foreground">
+                      Start claiming and completing tasks to see your history here.
+                    </p>
+                    <Button 
+                      className="mt-4" 
+                      onClick={() => navigate("/tasks")}
+                    >
+                      Find Tasks
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                tasks.map((task) => (
+                  <Card key={task.id}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>{task.title}</span>
+                        {getStatusBadge(task.status)}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-muted-foreground">{task.description}</p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{task.location_address}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Award className="h-4 w-4 text-muted-foreground" />
+                          <span>{task.reward_luvs} LUVs</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>Due: {new Date(task.deadline).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {task.status === "Rejected" && task.admin_rejection_message && (
+                        <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg">
+                          <p className="text-red-600 font-medium text-sm">Rejection Reason:</p>
+                          <p className="text-red-600 text-sm">{task.admin_rejection_message}</p>
+                        </div>
+                      )}
+
+                      {task.status === "Claimed" && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/tasks/${task.id}/submit`)}
+                          >
+                            Submit Proof
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/tasks/${task.id}`)}
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      )}
+
+                      <div className="text-xs text-muted-foreground">
+                        Claimed on {new Date(task.created_at).toLocaleDateString()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="transactions" className="space-y-4">
+              {transactions.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium">No transactions yet</h3>
+                    <p className="text-muted-foreground">
+                      Complete tasks to start earning LUVs and see your transaction history.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                transactions.map((transaction) => (
+                  <Card key={transaction.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-full bg-green-500/10">
+                            <ArrowDownLeft className="h-4 w-4 text-green-500" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{transaction.description}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(transaction.created_at).toLocaleDateString()} at{" "}
+                              {new Date(transaction.created_at).toLocaleTimeString()}
+                            </p>
+                            {transaction.tasks?.title && (
+                              <p className="text-sm text-muted-foreground">
+                                Task: {transaction.tasks.title}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-green-600">
+                            +{transaction.amount} LUVs
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default History;

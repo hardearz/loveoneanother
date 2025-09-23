@@ -21,7 +21,7 @@ import {
   FileText
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { pdf } from '@react-pdf/renderer';
 import { VolunteerResumeDocument } from "@/components/pdf/VolunteerResumeDocument";
 
 interface TaskHistory {
@@ -106,6 +106,37 @@ const History = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const blob = await pdf(
+        <VolunteerResumeDocument 
+          profile={profile} 
+          completedTasks={completedTasks} 
+        />
+      ).toBlob();
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${profile.first_name}_${profile.last_name}_Volunteer_Resume.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "PDF Generated Successfully",
+        description: "Your volunteer resume has been downloaded.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error generating PDF",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -207,36 +238,16 @@ const History = () => {
             {/* Export to PDF Button */}
             {completedTasks.length > 0 && (
               <div className="flex flex-col items-end gap-2">
-                <PDFDownloadLink
-                  document={
-                    <VolunteerResumeDocument 
-                      profile={profile} 
-                      completedTasks={completedTasks} 
-                    />
-                  }
-                  fileName={`${profile.first_name}_${profile.last_name}_Volunteer_Resume.pdf`}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportPDF}
+                  disabled={loading}
+                  className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  {({ loading }) => (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={loading}
-                      className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      {loading ? (
-                        <>
-                          <Clock className="h-4 w-4 animate-spin" />
-                          Generating PDF...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="h-4 w-4" />
-                          Export Resume PDF
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </PDFDownloadLink>
+                  <Download className="h-4 w-4" />
+                  Export Resume PDF
+                </Button>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <FileText className="h-3 w-3" />
                   <span>{completedTasks.length} completed task{completedTasks.length !== 1 ? 's' : ''}</span>

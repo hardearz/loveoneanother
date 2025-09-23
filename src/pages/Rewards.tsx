@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -36,6 +37,10 @@ const Rewards = () => {
   const [items, setItems] = useState<RedemptionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [redemptionSuccess, setRedemptionSuccess] = useState<{
+    show: boolean;
+    item: RedemptionItem | null;
+  }>({ show: false, item: null });
 
   useEffect(() => {
     fetchRedemptionItems();
@@ -95,13 +100,8 @@ const Rewards = () => {
 
       if (transactionError) throw transactionError;
 
-      toast({
-        title: "Redemption successful! 🎉",
-        description: item.redemption_code 
-          ? `You've redeemed ${item.name}. Your redemption code: ${item.redemption_code}. This code is also saved in your transaction history.`
-          : `You've redeemed ${item.name}. Check your email for details and view your transaction history for records.`,
-        duration: 10000, // 10 seconds to give time to read and copy the code
-      });
+      // Show success dialog instead of toast
+      setRedemptionSuccess({ show: true, item });
 
       // Refresh profile to update balance
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -279,6 +279,49 @@ const Rewards = () => {
             )}
           </div>
         </div>
+
+        {/* Success Dialog */}
+        <AlertDialog open={redemptionSuccess.show} onOpenChange={(open) => !open && setRedemptionSuccess({ show: false, item: null })}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-center text-green-600">
+                🎉 Redemption Successful!
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-center space-y-4">
+                <div>
+                  <p className="font-medium">You've successfully redeemed:</p>
+                  <p className="text-lg font-bold">{redemptionSuccess.item?.name}</p>
+                  <p className="text-sm text-muted-foreground">from {redemptionSuccess.item?.partner_name}</p>
+                </div>
+                
+                {redemptionSuccess.item?.redemption_code && (
+                  <div className="bg-muted p-4 rounded-lg border">
+                    <p className="font-medium text-primary mb-2">Your Redemption Code:</p>
+                    <div className="bg-background p-3 rounded border-2 border-primary/20">
+                      <p className="font-mono text-lg font-bold text-center tracking-wider">
+                        {redemptionSuccess.item.redemption_code}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      💡 This code is also saved in your transaction history
+                    </p>
+                  </div>
+                )}
+                
+                {!redemptionSuccess.item?.redemption_code && (
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm">Check your email for redemption details. All information is also saved in your transaction history.</p>
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setRedemptionSuccess({ show: false, item: null })}>
+                Got it!
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </>
   );

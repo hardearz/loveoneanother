@@ -70,7 +70,7 @@ const History = () => {
 
       if (taskError) throw taskError;
 
-      // Fetch LUV transactions
+      // Fetch LUV transactions - include both earnings (to_user_id) and redemptions (from_user_id)
       const { data: transactionData, error: transactionError } = await supabase
         .from("luv_transactions")
         .select(`
@@ -79,7 +79,7 @@ const History = () => {
             title
           )
         `)
-        .eq("to_user_id", profile?.id)
+        .or(`to_user_id.eq.${profile?.id},from_user_id.eq.${profile?.id}`)
         .order("created_at", { ascending: false });
 
       if (transactionError) throw transactionError;

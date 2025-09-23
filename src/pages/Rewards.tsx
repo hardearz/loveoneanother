@@ -29,32 +29,52 @@ interface RedemptionItem {
   created_at: string;
 }
 
+interface UserRedemption {
+  id: string;
+  redemption_item_id: string;
+  redeemed_at: string;
+  luvs_spent: number;
+}
+
 const Rewards = () => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [items, setItems] = useState<RedemptionItem[]>([]);
+  const [userRedemptions, setUserRedemptions] = useState<UserRedemption[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [redemptionSuccess, setRedemptionSuccess] = useState<{
     show: boolean;
     item: RedemptionItem | null;
-  }>({ show: false, item: null });
+    redemptionCode: string | null;
+  }>({ show: false, item: null, redemptionCode: null });
 
   useEffect(() => {
-    fetchRedemptionItems();
+    fetchData();
   }, []);
 
-  const fetchRedemptionItems = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch redemption items (without codes for non-redeemed items)
+      const { data: itemsData, error: itemsError } = await supabase
         .from("redemption_items")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setItems(data || []);
+      if (itemsError) throw itemsError;
+
+      // Fetch user's redemptions to know which codes they can see
+      const { data: redemptionsData, error: redemptionsError } = await supabase
+        .from("user_redemptions")
+        .select("*")
+        .order("redeemed_at", { ascending: false });
+
+      if (redemptionsError) throw redemptionsError;
+
+      setItems(itemsData || []);
+      setUserRedemptions(redemptionsData || []);
     } catch (error: any) {
       toast({
         title: "Error loading rewards",
@@ -78,34 +98,36 @@ const Rewards = () => {
 
     setRedeeming(item.id);
     try {
-      // Update user's LUV balance
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ 
-          luv_balance: profile.luv_balance - item.price_in_luvs 
-        })
-        .eq("id", profile.id);
+      // Use the secure redemption function
+      const { data, error } = await supabase.rpc('redeem_item', {
+        item_id: item.id
+      });
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
-      // Create transaction record with redemption details
-      const { error: transactionError } = await supabase
-        .from("luv_transactions")
-        .insert({
-          from_user_id: profile.id,
-          to_user_id: null, // Redemption doesn't have a recipient
-          amount: -item.price_in_luvs,
-          description: `Redeemed: ${item.name} from ${item.partner_name}${item.redemption_code ? ` | Code: ${item.redemption_code}` : ''}`
-        });
+      const result = data as { success: boolean; error?: string; redemption_code?: string; redemption_id?: string };
 
-      if (transactionError) throw transactionError;
+      if (!result.success) {
+        throw new Error(result.error || 'Redemption failed');
+      }
 
-      // Show success dialog instead of toast
-      setRedemptionSuccess({ show: true, item });
+      // Show success dialog with redemption code
+      setRedemptionSuccess({ 
+        show: true, 
+        item, 
+        redemptionCode: result.redemption_code || null 
+      });
 
-      // Refresh profile to update balance without page reload
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await refreshProfile();
+      // Refresh profile and data
+      await Promise.all([
+        refreshProfile(),
+        fetchData()
+      ]);
+
+      toast({
+        title: "Redemption successful!",
+        description: `You've redeemed ${item.name}. Check the dialog for your redemption code.`,
+      });
 
     } catch (error: any) {
       toast({
@@ -195,14 +217,21 @@ const Rewards = () => {
               items.map((item) => {
                 const isValid = isItemValid(item);
                 const canAfford = profile.luv_balance >= item.price_in_luvs;
-                const canRedeem = isValid && canAfford;
+                const hasRedeemed = userRedemptions.some(r => r.redemption_item_id === item.id);
+                const canRedeem = isValid && canAfford && !hasRedeemed;
 
                 return (
-                  <Card key={item.id} className={`relative ${!isValid ? 'opacity-60' : ''}`}>
+                  <Card key={item.id} className={`relative ${!isValid ? 'opacity-60' : hasRedeemed ? 'border-green-200 bg-green-50/50' : ''}`}>
                     {!isValid && (
                       <Badge className="absolute top-2 right-2 bg-red-500/10 text-red-500">
                         <Clock className="h-3 w-3 mr-1" />
                         Expired
+                      </Badge>
+                    )}
+                    {hasRedeemed && (
+                      <Badge className="absolute top-2 right-2 bg-green-500/10 text-green-500">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Redeemed
                       </Badge>
                     )}
                     
@@ -237,10 +266,19 @@ const Rewards = () => {
                         </div>
                       </div>
 
-                      {!canAfford && isValid && (
+                      {!canAfford && isValid && !hasRedeemed && (
                         <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded">
                           <AlertCircle className="h-4 w-4" />
                           <span>Need {item.price_in_luvs - profile.luv_balance} more LUVs</span>
+                        </div>
+                      )}
+
+                      {hasRedeemed && item.redemption_code && (
+                        <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                          <p className="text-sm font-medium text-green-800 mb-1">Your Code:</p>
+                          <p className="font-mono text-lg font-bold text-green-900 tracking-wider">
+                            {item.redemption_code}
+                          </p>
                         </div>
                       )}
 
@@ -259,6 +297,11 @@ const Rewards = () => {
                           <>
                             <Clock className="h-4 w-4 mr-2" />
                             Expired
+                          </>
+                        ) : hasRedeemed ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Already Redeemed
                           </>
                         ) : !canAfford ? (
                           <>
@@ -281,7 +324,7 @@ const Rewards = () => {
         </div>
 
         {/* Success Dialog */}
-        <AlertDialog open={redemptionSuccess.show} onOpenChange={(open) => !open && setRedemptionSuccess({ show: false, item: null })}>
+        <AlertDialog open={redemptionSuccess.show} onOpenChange={(open) => !open && setRedemptionSuccess({ show: false, item: null, redemptionCode: null })}>
           <AlertDialogContent className="max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-center text-green-600">
@@ -294,29 +337,29 @@ const Rewards = () => {
                   <p className="text-sm text-muted-foreground">from {redemptionSuccess.item?.partner_name}</p>
                 </div>
                 
-                {redemptionSuccess.item?.redemption_code && (
+                {redemptionSuccess.redemptionCode && (
                   <div className="bg-muted p-4 rounded-lg border">
                     <p className="font-medium text-primary mb-2">Your Redemption Code:</p>
                     <div className="bg-background p-3 rounded border-2 border-primary/20">
                       <p className="font-mono text-lg font-bold text-center tracking-wider">
-                        {redemptionSuccess.item.redemption_code}
+                        {redemptionSuccess.redemptionCode}
                       </p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2 text-center">
-                      💡 This code is also saved in your transaction history
+                      💡 Save this code! You can also view it in your redeemed items.
                     </p>
                   </div>
                 )}
                 
-                {!redemptionSuccess.item?.redemption_code && (
+                {!redemptionSuccess.redemptionCode && (
                   <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm">Check your email for redemption details. All information is also saved in your transaction history.</p>
+                    <p className="text-sm">Check your email for redemption details or contact the partner directly.</p>
                   </div>
                 )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogAction onClick={() => setRedemptionSuccess({ show: false, item: null })}>
+              <AlertDialogAction onClick={() => setRedemptionSuccess({ show: false, item: null, redemptionCode: null })}>
                 Got it!
               </AlertDialogAction>
             </AlertDialogFooter>

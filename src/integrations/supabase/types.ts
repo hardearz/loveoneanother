@@ -237,6 +237,38 @@ export type Database = {
           },
         ]
       }
+      user_redemptions: {
+        Row: {
+          id: string
+          luvs_spent: number
+          redeemed_at: string
+          redemption_item_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          luvs_spent: number
+          redeemed_at?: string
+          redemption_item_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          luvs_spent?: number
+          redeemed_at?: string
+          redemption_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_redemptions_redemption_item_id_fkey"
+            columns: ["redemption_item_id"]
+            isOneToOne: false
+            referencedRelation: "redemption_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -245,6 +277,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      redeem_item: {
+        Args: { item_id: string }
+        Returns: Json
       }
     }
     Enums: {

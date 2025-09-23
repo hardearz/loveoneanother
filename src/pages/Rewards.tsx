@@ -83,21 +83,24 @@ const Rewards = () => {
 
       if (updateError) throw updateError;
 
-      // Create transaction record
+      // Create transaction record with redemption details
       const { error: transactionError } = await supabase
         .from("luv_transactions")
         .insert({
           from_user_id: profile.id,
           to_user_id: null, // Redemption doesn't have a recipient
           amount: -item.price_in_luvs,
-          description: `Redeemed: ${item.name} from ${item.partner_name}`
+          description: `Redeemed: ${item.name} from ${item.partner_name}${item.redemption_code ? ` | Code: ${item.redemption_code}` : ''}`
         });
 
       if (transactionError) throw transactionError;
 
       toast({
-        title: "Redemption successful!",
-        description: `You've redeemed ${item.name}. ${item.redemption_code ? `Your code: ${item.redemption_code}` : 'Check your email for details.'}`,
+        title: "Redemption successful! 🎉",
+        description: item.redemption_code 
+          ? `You've redeemed ${item.name}. Your redemption code: ${item.redemption_code}. This code is also saved in your transaction history.`
+          : `You've redeemed ${item.name}. Check your email for details and view your transaction history for records.`,
+        duration: 10000, // 10 seconds to give time to read and copy the code
       });
 
       // Refresh profile to update balance

@@ -269,36 +269,58 @@ const History = () => {
                   </CardContent>
                 </Card>
               ) : (
-                transactions.map((transaction) => (
-                  <Card key={transaction.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-full bg-green-500/10">
-                            <ArrowDownLeft className="h-4 w-4 text-green-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{transaction.description}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(transaction.created_at).toLocaleDateString()} at{" "}
-                              {new Date(transaction.created_at).toLocaleTimeString()}
-                            </p>
-                            {transaction.tasks?.title && (
+                transactions.map((transaction) => {
+                  // Extract redemption code if present in description
+                  const codeMatch = transaction.description.match(/Code: ([^|]+)/);
+                  const redemptionCode = codeMatch ? codeMatch[1].trim() : null;
+                  const isRedemption = transaction.amount < 0;
+                  
+                  return (
+                    <Card key={transaction.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${isRedemption ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
+                              {isRedemption ? (
+                                <ArrowUpRight className="h-4 w-4 text-red-500" />
+                              ) : (
+                                <ArrowDownLeft className="h-4 w-4 text-green-500" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium">{transaction.description.split(' | ')[0]}</p>
                               <p className="text-sm text-muted-foreground">
-                                Task: {transaction.tasks.title}
+                                {new Date(transaction.created_at).toLocaleDateString()} at{" "}
+                                {new Date(transaction.created_at).toLocaleTimeString()}
                               </p>
-                            )}
+                              {transaction.tasks?.title && (
+                                <p className="text-sm text-muted-foreground">
+                                  Task: {transaction.tasks.title}
+                                </p>
+                              )}
+                              {redemptionCode && (
+                                <div className="mt-2 p-2 bg-muted rounded border-l-4 border-primary">
+                                  <p className="text-sm font-medium text-primary">Redemption Code:</p>
+                                  <p className="font-mono text-sm bg-background px-2 py-1 rounded mt-1 border">
+                                    {redemptionCode}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    💡 Save this code for your redemption
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-lg font-bold ${isRedemption ? 'text-red-600' : 'text-green-600'}`}>
+                              {isRedemption ? '' : '+'}{transaction.amount} LUVs
+                            </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-green-600">
-                            +{transaction.amount} LUVs
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
             </TabsContent>
           </Tabs>

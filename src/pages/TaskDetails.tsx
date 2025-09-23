@@ -21,6 +21,7 @@ interface Task {
   category_id: string;
   photos?: string[];
   claimed_by?: string;
+  admin_rejection_message?: string;
   categories?: {
     name: string;
   };
@@ -140,6 +141,7 @@ export const TaskDetails: React.FC = () => {
 
   const isUrgent = new Date(task.deadline).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000;
   const isClaimed = task.status === 'Claimed' && task.claimed_by === profile?.id;
+  const isRejected = task.status === 'Rejected' && task.claimed_by === profile?.id;
   const isAvailable = task.status === 'Available';
 
   return (
@@ -218,6 +220,21 @@ export const TaskDetails: React.FC = () => {
               </div>
             )}
 
+            {/* Admin Rejection Message */}
+            {isRejected && task.admin_rejection_message && (
+              <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg">
+                <div className="flex items-center gap-2 text-red-600 mb-2">
+                  <span className="font-medium">Task was rejected</span>
+                </div>
+                <p className="text-sm text-red-600 mb-2">
+                  <strong>Reason:</strong> {task.admin_rejection_message}
+                </p>
+                <p className="text-sm text-red-600">
+                  Please address the issues mentioned above and resubmit your proof.
+                </p>
+              </div>
+            )}
+
             <div className="pt-4">
               {isAvailable && (
                 <Button
@@ -245,6 +262,17 @@ export const TaskDetails: React.FC = () => {
                 >
                   <Camera className="h-4 w-4 mr-2" />
                   Submit Proof
+                </Button>
+              )}
+
+              {isRejected && (
+                <Button
+                  onClick={handleStartWork}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Resubmit Proof
                 </Button>
               )}
 

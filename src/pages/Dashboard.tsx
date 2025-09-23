@@ -18,6 +18,7 @@ interface Task {
   reward_luvs: number;
   status: string;
   category_id: string;
+  admin_rejection_message?: string;
 }
 
 export default function Dashboard() {
@@ -237,6 +238,15 @@ export default function Dashboard() {
                         <span>{task.reward_luvs} LUV</span>
                       </div>
                     </div>
+
+                    {/* Show rejection message for rejected tasks */}
+                    {task.status === 'Rejected' && task.admin_rejection_message && (
+                      <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg mb-3">
+                        <p className="text-sm text-red-600">
+                          <strong>Rejection reason:</strong> {task.admin_rejection_message}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Action buttons */}
                     <div className="flex gap-2">

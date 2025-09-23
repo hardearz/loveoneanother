@@ -8,19 +8,25 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Award, Phone, Mail, Edit, Save, X } from "lucide-react";
+import { User, Award, Phone, Mail, Edit, Save, X, Lock } from "lucide-react";
 
 const Profile = () => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   
   const [editing, setEditing] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     first_name: profile?.first_name || "",
     last_name: profile?.last_name || "",
     phone_number: profile?.phone_number || "",
     email: profile?.email || "",
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const handleSave = async () => {
@@ -85,6 +91,83 @@ const Profile = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handlePasswordChange = async () => {
+    if (!profile) return;
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // First verify current password by attempting to sign in with it
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: passwordData.currentPassword,
+      });
+
+      if (verifyError) {
+        toast({
+          title: "Error",
+          description: "Current password is incorrect",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully.",
+      });
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setChangingPassword(false);
+    } catch (error: any) {
+      toast({
+        title: "Error updating password",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordCancel = () => {
+    setPasswordData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+    setChangingPassword(false);
   };
 
   if (!profile) {
@@ -260,6 +343,89 @@ const Profile = () => {
                 <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
                 <p>{new Date(profile.updated_at).toLocaleDateString()}</p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Password Change */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Change Password
+                </div>
+                {!changingPassword && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setChangingPassword(true)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Change Password
+                  </Button>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {changingPassword ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                      placeholder="Enter your current password"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                      placeholder="Enter your new password"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                      placeholder="Confirm your new password"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      onClick={handlePasswordChange}
+                      disabled={loading}
+                      className="flex-1"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {loading ? "Updating..." : "Update Password"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handlePasswordCancel}
+                      disabled={loading}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted-foreground">
+                  Click "Change Password" to update your account password. You'll need to enter your current password and your new password twice for confirmation.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

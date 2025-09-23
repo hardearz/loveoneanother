@@ -16,6 +16,7 @@ export default function Auth() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
   });
@@ -33,6 +34,17 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // Validate password confirmation for sign up
+    if (isSignUp && formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
 
     try {
       let result;
@@ -144,6 +156,21 @@ export default function Auth() {
               />
             </div>
 
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  placeholder="••••••••"
+                />
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -162,7 +189,7 @@ export default function Auth() {
               variant="link"
               onClick={() => {
                 setIsSignUp(!isSignUp);
-                setFormData({ email: '', password: '', firstName: '', lastName: '' });
+                setFormData({ email: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
               }}
               className="text-muted-foreground hover:text-foreground"
             >

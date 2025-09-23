@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, Heart } from 'lucide-react';
+import { MapPin, Clock, Heart, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface Task {
   id: string;
@@ -23,13 +26,62 @@ interface Task {
 
 interface TaskCardProps {
   task: Task;
+  onTaskClaimed?: (taskId: string) => void;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onTaskClaimed }) => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const { toast } = useToast();
+  const [claiming, setClaiming] = useState(false);
 
   const handleTaskClick = () => {
     navigate(`/tasks/${task.id}`);
+  };
+
+  const handleClaimTask = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!profile) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to claim tasks.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setClaiming(true);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          status: 'Claimed',
+          claimed_by: profile.id,
+        })
+        .eq('id', task.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Task claimed!",
+        description: "You can now start working on this task.",
+      });
+      
+      // Notify parent component to refresh the task list
+      if (onTaskClaimed) {
+        onTaskClaimed(task.id);
+      }
+    } catch (error) {
+      console.error('Error claiming task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to claim task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setClaiming(false);
+    }
   };
 
   const isUrgent = new Date(task.deadline).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000;
@@ -86,15 +138,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
           </div>
         )}
 
-        <Button 
-          className="w-full" 
-          onClick={(e) => {
-            e.stopPropagation();
-            handleTaskClick();
-          }}
-        >
-          View Details
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            className="flex-1" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTaskClick();
+            }}
+          >
+            View Details
+          </Button>
+          <Button 
+            className="flex-1" 
+            onClick={handleClaimTask}
+            disabled={claiming}
+          >
+            {claiming ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Claiming...
+              </>
+            ) : (
+              'Claim Task'
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

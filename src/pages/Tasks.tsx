@@ -68,6 +68,11 @@ export const Tasks: React.FC = () => {
     }
   };
 
+  const handleTaskClaimed = (taskId: string) => {
+    // Remove the claimed task from the available tasks list
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+  };
+
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          task.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -143,7 +148,7 @@ export const Tasks: React.FC = () => {
             </div>
           ) : (
             filteredTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} onTaskClaimed={handleTaskClaimed} />
             ))
           )}
         </div>

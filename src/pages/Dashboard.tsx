@@ -4,9 +4,10 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Search, History, Gift, Calendar, MapPin, Coins } from 'lucide-react';
+import { Heart, Search, History, Gift, Calendar, MapPin, Coins, Upload, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Task {
   id: string;
@@ -22,6 +23,7 @@ interface Task {
 export default function Dashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [claimedTasks, setClaimedTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +41,7 @@ export default function Dashboard() {
         .from('tasks')
         .select('*')
         .eq('claimed_by', profile.id)
-        .in('status', ['Claimed', 'Pending Approval']);
+        .in('status', ['Claimed', 'Pending Approval', 'Rejected']);
 
       if (error) {
         console.error('Error fetching claimed tasks:', error);
@@ -57,11 +59,43 @@ export default function Dashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Claimed':
-        return 'bg-info text-info-foreground';
+        return 'bg-blue-500/10 text-blue-500';
       case 'Pending Approval':
-        return 'bg-secondary text-secondary-foreground';
+        return 'bg-yellow-500/10 text-yellow-500';
+      case 'Rejected':
+        return 'bg-red-500/10 text-red-500';
       default:
         return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const handleReleaseTask = async (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ 
+          status: 'Available',
+          claimed_by: null,
+          proof_text: null,
+          admin_rejection_message: null
+        })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Task released",
+        description: "The task has been returned to available tasks."
+      });
+
+      fetchClaimedTasks(); // Refresh the list
+    } catch (error: any) {
+      toast({
+        title: "Error releasing task",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
 
@@ -166,21 +200,28 @@ export default function Dashboard() {
                 {claimedTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => navigate(`/tasks/${task.id}`)}
+                    className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-foreground">{task.title}</h3>
+                      <h3 
+                        className="font-semibold text-foreground cursor-pointer hover:text-primary"
+                        onClick={() => navigate(`/tasks/${task.id}`)}
+                      >
+                        {task.title}
+                      </h3>
                       <Badge className={getStatusColor(task.status)}>
                         {task.status}
                       </Badge>
                     </div>
                     
-                    <p className="text-muted-foreground text-sm mb-3">
+                    <p 
+                      className="text-muted-foreground text-sm mb-3 cursor-pointer"
+                      onClick={() => navigate(`/tasks/${task.id}`)}
+                    >
                       {task.description.substring(0, 120)}...
                     </p>
                     
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-1">
                           <MapPin className="h-4 w-4" />
@@ -195,6 +236,73 @@ export default function Dashboard() {
                         <Coins className="h-4 w-4" />
                         <span>{task.reward_luvs} LUV</span>
                       </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex gap-2">
+                      {task.status === 'Claimed' && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/tasks/${task.id}/submit`);
+                            }}
+                            className="flex-1"
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Submit Proof
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => handleReleaseTask(task.id, e)}
+                            className="flex-1"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-1" />
+                            Release Task
+                          </Button>
+                        </>
+                      )}
+                      
+                      {task.status === 'Rejected' && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/tasks/${task.id}/submit`);
+                            }}
+                            className="flex-1"
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Resubmit Proof
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => handleReleaseTask(task.id, e)}
+                            className="flex-1"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-1" />
+                            Release Task
+                          </Button>
+                        </>
+                      )}
+
+                      {task.status === 'Pending Approval' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/tasks/${task.id}/submit`);
+                          }}
+                          className="w-full"
+                        >
+                          View Submission
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}

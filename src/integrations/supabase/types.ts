@@ -275,7 +275,7 @@ export type Database = {
     }
     Functions: {
       get_public_redemption_items: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           description: string
@@ -288,14 +288,8 @@ export type Database = {
           validity_start: string
         }[]
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      redeem_item: {
-        Args: { item_id: string }
-        Returns: Json
-      }
+      is_admin: { Args: never; Returns: boolean }
+      redeem_item: { Args: { item_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
